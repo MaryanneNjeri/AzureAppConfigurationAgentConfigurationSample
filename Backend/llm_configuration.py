@@ -10,7 +10,6 @@ from typing import List, Dict, Optional
 class AzureOpenAIConnectionInfo:
     """Represents the connection information for Azure OpenAI."""
 
-    api_key: str
     endpoint: str
     api_version: str = "2024-12-01-preview"
 
@@ -30,7 +29,7 @@ class LLMConfiguration:
     model_provider: str
     model: str
     temperature: float
-    max_completion_tokens: int
+    max_tokens: int
     messages: List[MessageConfiguration]
 
     def __init__(
@@ -38,13 +37,13 @@ class LLMConfiguration:
         model_provider: str = "azure_openai",
         model: str = "gpt-35-turbo",
         temperature: float = 0.7,
-        max_completion_tokens: int = 1000,
+        max_tokens: int = 1000,
         messages: Optional[List[Dict[str, str]]] = None,
     ):
         self.model_provider = model_provider
         self.model = model
         self.temperature = temperature
-        self.max_completion_tokens = max_completion_tokens
+        self.max_tokens = max_tokens
         self.messages = []
 
         # Initialize messages if provided in the configuration

@@ -47,13 +47,13 @@ class AzureOpenAIService:
         # Add conversation history
         for message in request.history:
             messages.append({"role": message.role, "content": message.content})
-
+        print(f"request: {request}")
         # Add current user message
         messages.append({"role": "user", "content": request.message})
 
         response = self.client.chat.completions.create(
             messages=messages,
-            max_tokens=self.model_config.max_completion_tokens,
+            max_tokens=self.model_config.max_tokens,
             temperature=self.model_config.temperature,
             top_p=1.0,
             model=self.model_config.model,

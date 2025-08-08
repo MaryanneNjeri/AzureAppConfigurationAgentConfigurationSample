@@ -2,6 +2,7 @@ import axios from 'axios';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { ChatMessage, ChatRequest, ChatResponse } from './types';
+import * as Constants from "./Constants";
 
 export class App {
   private chatMessages: HTMLElement | null = null;
@@ -10,18 +11,24 @@ export class App {
   private chatForm: HTMLFormElement | null = null;
   private messageHistory: ChatMessage[] = [];
   private isWaitingForResponse: boolean = false;
+  private threadId: string ="";
 
   public async init(): Promise<void> {
     const modelName = await this.fetchModelName();
-    this.render(modelName);
+    const isBetaMode: boolean = await this.fetchFlagStatus()
+    this.render(modelName, isBetaMode);
     this.bindElements();
     this.bindEvents();
   }
 
-  private render(modelName: string): void {
+  private render(modelName: string, isBetaMode: boolean): void {
     const app = document.getElementById('app');
     if (!app) return;
-
+    
+    // Choose icon based on mode
+    const iconPath = isBetaMode ? './assets/azureai-color.svg' : './assets/azure-app-configuration-icon.svg';
+    const iconAlt = isBetaMode ? 'AI Agent Logo' : 'Azure App Configuration Logo';
+    
     app.innerHTML = `
       <header class="header">
         <div class="header-logo">
@@ -32,10 +39,13 @@ export class App {
       <main class="chat-container">
         <div class="chat-messages" id="chat-messages">
           <div class="welcome-container">
-            <img src="./assets/azure-app-configuration-icon.svg" alt="Azure App Configuration Logo" class="welcome-logo" />
+            <img src="${iconPath}" alt="${iconAlt}" class="welcome-logo" />
             <h2 class="welcome-title">Welcome to Azure App Configuration AI Chat</h2>
             <p class="welcome-description">
-              I'm your AI assistant powered by Azure App Configuration (model: ${modelName}). Ask me anything and I'll do my best to help you.
+              ${isBetaMode ? 
+                'Agent mode activated! (Beta) I\'m your advanced AI agent powered by Azure App Configuration.' : 
+                `I'm your AI assistant powered by Azure App Configuration (model: ${modelName}). Ask me anything and I'll do my best to help you.`
+              }
             </p>
           </div>
         </div>
@@ -89,11 +99,22 @@ export class App {
 
   private async fetchModelName(): Promise<string> {
     try {
-      const response = await axios.get<string>('/api/chat/model');
-      return response.data;
+      const response = await axios.get<{ model: string }>(`${Constants.endpoint}/api/chat/model`);
+      return response.data.model;
     } catch (error) {
       console.error('Error fetching model name:', error);
       return 'unknown';
+    }
+  }
+
+  private async fetchFlagStatus(): Promise<boolean> {
+    try {
+      const response = await axios.get<{ isEnabled: boolean}>(`${Constants.endpoint}/api/featureFlag/status`);
+      
+      return response.data.isEnabled;
+    } catch (error) {
+      console.error('Error fetching feature flag status:', error);
+      return false;
     }
   }
 
@@ -129,16 +150,19 @@ export class App {
     try {
       const request: ChatRequest = {
         message,
-        history: this.messageHistory
+        history: this.messageHistory,
+        thread_id: this.threadId
       };
 
-      const response = await axios.post<ChatResponse>('/api/chat', request);
+      const response = await axios.post<ChatResponse>(`${Constants.endpoint}/api/chat`, request);
       
       // Hide typing indicator
       this.hideTypingIndicator();
 
       // Update message history with the complete history from response
       this.messageHistory = response.data.history;
+
+      this.threadId = response.data.thread_id ?? "";
 
       // Add bot message to UI
       this.addMessageToUI('bot', response.data.message);

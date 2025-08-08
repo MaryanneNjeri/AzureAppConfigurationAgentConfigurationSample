@@ -1,4 +1,6 @@
 flask
+flask-cors
 azure-identity
 openai
+semantic-kernel
 azure-appconfiguration-provider
