@@ -3,10 +3,10 @@
 This demo shows how to build an intelligent chat application using **Azure AI Agents** with configuration managed through **Azure App Configuration**. The app dynamically loads settings and can switch between regular chat and advanced agent modes.
 
 ## Note 
-This repo extends builds on the [AIConfigurationSample](https://github.com/mrm9084/AzureAppConfigurationAiConfigurationSample).
+This repository builds upon the [AIConfigurationSample](https://github.com/mrm9084/AzureAppConfigurationAiConfigurationSample) by adding Azure AI Agent capabilities.
 
-![Chat Interface Screenshot](Images/AgentModeChat.png)
-![Configuration Screenshot](Images/ConfigurationScreenshot.png)
+![Chat Interface Screenshot](Images/ChatScreenshot.png)
+![Configuration Screenshot](Images/AgentConfigurationScreenshot.png)
 
 ## What This Demo Shows
 
