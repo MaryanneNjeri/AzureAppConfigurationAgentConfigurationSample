@@ -16,7 +16,7 @@ class FoundryAgent:
 
     @classmethod
     async def create(
-        cls, config, credential
+        cls, config, credential, extras
     ):
         if not config:
             raise ValueError("configuration cannot be null")
@@ -36,7 +36,8 @@ class FoundryAgent:
         instance.agent = await AgentRegistry.create_from_yaml(
             yaml_str=agentSpec,
             client = instance.client,
-            settings=settings
+            settings=settings,
+            extras=extras
         )
         
         return instance

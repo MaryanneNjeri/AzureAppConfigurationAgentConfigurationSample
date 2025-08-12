@@ -1,25 +1,35 @@
-# AI Configuration Demo Application
+# Azure AI Agent Configuration Chat Demo
 
-This repository contains a demo application that showcases integration with Azure OpenAI services using Azure App Configuration for dynamic AI model configuration.
+This demo shows how to build an intelligent chat application using **Azure AI Agents** with configuration managed through **Azure App Configuration**. The app dynamically loads settings and can switch between regular chat and advanced agent modes.
 
-![Chat Interface Screenshot](Images/ChatScreenshot.png)
+## Note 
+This repo extends builds on the [AIConfigurationSample](https://github.com/mrm9084/AzureAppConfigurationAiConfigurationSample).
 
+![Chat Interface Screenshot](Images/AgentModeChat.png)
 ![Configuration Screenshot](Images/ConfigurationScreenshot.png)
+
+## What This Demo Shows
+
+- 🤖 **Azure AI Agent Integration**: Chat with an intelligent AI agent powered by Azure Foundry
+- ⚙️ **Dynamic Configuration**: Agent configuration update automatically from Azure App Configuration
+- 🔄 **Live Config Updates**: Change AI behavior without restarting the application
+- 🎛️ **Feature Flags**: Toggle between regular chat and advanced agent mode
+- 🔐 **Secure Configuration**: API keys stored safely in Azure Key Vault
 
 ## Project Structure
 
-- **Backend**: .NET API that integrates with Azure OpenAI
-- **Frontend**: TypeScript/Vite application that provides a chat interface
+- **Backend**: Python Flask API that manages AI agents and configuration
+- **Frontend**: TypeScript/Vite web application with a clean chat interface
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Node.js](https://nodejs.org/) (v16+)
-- [npm](https://www.npmjs.com/)
-- Azure account with the following services:
-  - Azure App Configuration
-  - Azure OpenAI
-  - Azure Key Vault
+- [Python 3.8+](https://www.python.org/downloads/)
+- [Node.js 16+](https://nodejs.org/) and npm
+- An Azure subscription with these services:
+  - [Azure AI Agent](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bing-grounding#setup)
+  - [Azure App Configuration](https://learn.microsoft.com/en-us/azure/azure-app-configuration/quickstart-azure-app-configuration-create?tabs=azure-portal)
+  - [Azure Key Vault](https://learn.microsoft.com/en-us/azure/azure-app-configuration/use-key-vault-references-dotnet-core#create-a-vault)
+  - [Grounding wwith Bing search](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bing-grounding#setup)
 
 ## Setup Instructions
 
@@ -46,87 +56,125 @@ This repository contains a demo application that showcases integration with Azur
    ```
    The frontend will be available at `http://localhost:5173`
 
-### 2. Backend Configuration
+### 2. Set Up the Backend
 
-1. Configure Azure App Configuration with the following settings:
+Navigate to the Backend folder and install Python dependencies:
+```bash
+cd Backend
+pip install -r requirements.txt
+flask run
+```
+The API will run at `http://localhost:5000`
 
-   a. **AI Model Configuration**:
-   - **Key**: `ChatLLM`
-   - **Value**: 
-     ```json
-     {
-       "model_provider": "azure_openai",
-       "model": "{Azure Open AI deployment name}",
-       "temperature": 0.7,
-       "max_completion_tokens": 1000,
-       "messages": [
-         {
-           "role": "system",
-           "content": "You are a helpful Microsoft AI assistant. Be concise, professional, and informative."
-         }
-       ]
-     }
-     ```
-     Replace `{Azure Open AI deployment name}` with your actual deployment name.
-   - **Content Type**: `application/json`
+### 3. Configure Azure Services
 
-   b. **Azure OpenAI Endpoint**:
-   - **Key**: `AzureOpenAI:Endpoint`
-   - **Value**: `{Endpoint of Azure Open AI resource}`
+You'll need to set up configuration in **Azure App Configuration** with these key settings:
 
-   c. **Azure OpenAI API Key** (using Key Vault reference):
-   - **Key**: `AzureOpenAI:ApiKey`
-   - **Value**: 
-     ```json
-     {
-       "uri": "{URI of Azure Key Vault secret containing Azure Open AI API key}"
-     }
-     ```
-   - **Content Type**: `application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8`
+#### Required Configuration Keys
 
-### 3. Authentication Setup
+**AI Agent Configuration** (`MyAgent`):
+```yaml
+type: foundry_agent
+name: BingAgent
+instructions: Answer questions using Bing to provide grounding context.
+description: This agent answers questions using Bing to provide grounding context.
+model:
+  id: gpt-4o
+  options:
+    temperature: 0.4
+tools:
+  - type: bing_grounding
+    options:
+      tool_connections:
+        - ${BingConnectionId}  # Your bing connection Id, can be stored as key vault reference and resolved at runtime
+      freshness: Day # Can be configured see https://learn.microsoft.com/en-us/azure/ai-foundry/agents/how-to/tools/bing-grounding#optional-parameters
+      count: 3
+```
 
-The application uses `DefaultAzureCredential` for authentication, which requires either:
+**Agent Connection Settings**:
+- `MyAgent:ProjectEndpoint` = Your Azure AI Foundry project endpoint
+- `MyAgent:ModelDeploymentName` = Your model deployment name  
+- `MyAgent:ApiVersion` = API version (e.g., "2024-07-01-preview")
 
-1. Authentication via Visual Studio / Visual Studio Code
-2. Authentication via Azure CLI
-3. Managed identity (for deployment scenarios)
+**Feature Flag for Agent Mode**:
+- Key: `Beta` 
+- Value: `true` (enables advanced agent features) or `false` (basic chat mode)
 
-Ensure you are logged in with an identity that has the following permissions:
-- **Azure App Configuration**: App Configuration Data Reader role
-- **Azure Key Vault**: Key Vault Secret User role for the key vault containing the OpenAI API key
+**Legacy Chat Configuration** (for non-agent mode):
+- `ChatLLM` = JSON configuration for basic chat
+- `AzureOpenAI:Endpoint` = Your Azure OpenAI endpoint
+- `AzureOpenAI:ApiKey` = Key Vault reference to your API key
 
-#### Authentication Steps:
+#### Authentication Setup:
 
-1. **Visual Studio Code**:
-   - Install the Azure Account extension
-   - Sign in using the Azure: Sign In command
+The application uses DefaultAzureCredential for authentication, which requires either:
 
-2. **Azure CLI**:
-   ```
-   az login
-   ```
+   1. Authentication via Visual Studio / Visual Studio Code
+   1. Authentication via Azure CLI
+   1. Managed identity (for deployment scenarios)
 
-### 4. Running the Application
+**Required Permissions:**
+Your Azure account needs these permissions:
+- **Azure App Configuration**: `App Configuration Data Reader` role
+- **Azure Key Vault**: `Key Vault Secret User` role for the key vault containing the `BingConnectionId`
+- [Azure AI Foundry project roles](https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/rbac-azure-ai-foundry?pivots=fdp-project)
 
-1. Start the backend API:
-   ```
-   cd Backend
-   flask run
-   ```
-   The API will be available at `https://localhost:5000`
+## How It Works
 
-2. Ensure the frontend is running (from step 1.4)
+### Configuration Refresh
+The application is configured to automatically refresh configuration settings from Azure App Configuration every 30 seconds, allowing real-time updates to AI model settings, agent configuration, or feature flags without restarting the service.
 
-3. Navigate to `http://localhost:5173` in your browser to use the application
+### Two Chat Modes
+1. **Agent Mode** (when `Beta` feature flag is `true`):
+   - Uses Azure AI Foundry agents with Grounding bing search tool that allows your Azure AI agent to incorporate real-time public web data when generating responses.
+   - Supports conversation threads and complex interactions
+   
+2. **Basic Chat Mode** (when `Beta` feature flag is `false`):
+   - Direct Azure OpenAI integration
+   - Simple request/response chat interface
 
-## Configuration Refresh
+## Using the Application
 
-The application is configured to automatically refresh configuration settings from Azure App Configuration every 30 seconds, allowing real-time updates to AI model parameters without restarting the service.
+1. **Start both frontend and backend** (see Quick Start above)
+2. **Open your browser** to `http://localhost:5173`
+3. **Start chatting!** The AI will respond using your configured model
+4. **Try changing settings** in Azure App Configuration to see live updates
 
 ## Troubleshooting
 
-- **Authentication issues**: Ensure you're logged in with an account that has appropriate permissions
-- **Key Vault access**: Verify that the identity used by DefaultAzureCredential has proper access to the Key Vault
-- **CORS errors**: Ensure the backend is running and the frontend URL is properly configured in the CORS policy
-- **Model errors**: Verify that your Azure OpenAI deployment name is correct and the model is available
+**Common Issues:**
+
+**"Authentication failed"**
+- Make sure you're logged in: `az login`
+- Check your permissions in Azure App Configuration, Key Vault and Foundry project.
+
+
+**"Agent creation failed"**
+- Check your project endpoint and model deployment name in Foundry
+- Verify the `Beta` feature flag is enabled if using agent mode
+
+**"CORS errors in browser"**
+- Ensure the Flask backend is running on port 5000
+- Frontend should be on port 5173
+
+**"Model not responding"**
+- Verify your Azure AI model deployment is active
+
+
+## Next Steps
+
+- **Try different agent tools** like code interpreter, azure ai search etc.
+- **Toggle the Beta feature flag** to see the difference between modes
+- **Try different agent types** by updating settings in Azure App Configuration
+
+## Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Flask API     │    │  Azure Services │
+│  (TypeScript)   │◄──►│   (Python)      │◄──►│                 │
+│                 │    │                 │    │ • App Config    │
+│ • Chat UI       │    │ • Agent Manager │    │ • Foundry       │
+│ • Real-time     │    │ • Config Sync   │    │ • Key Vault     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```

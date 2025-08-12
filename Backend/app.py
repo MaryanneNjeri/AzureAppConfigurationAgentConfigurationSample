@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 configurations = None
 
 credential = DefaultAzureCredential()
-app_config_endpoint = os.getenv("AZURE_APP_CONFIG_ENDPOINT")
+app_config_endpoint = os.environ.get("AZURE_APP_CONFIG_ENDPOINT")
 
 # Track configuration state
 config_version = 0
@@ -49,6 +49,7 @@ configurations = load(
     feature_flag_refresh_enabled=True,
     refresh_interval=10,
     on_refresh_success=on_refresh_success,
+    keyvault_credential=credential,
     refresh_on=[WatchKey("AZURE_OPENAI"), WatchKey("CHAT_LLM"), WatchKey("MyAgent"), WatchKey(".appconfig.featureflag/Beta")],
 )
     
@@ -80,7 +81,7 @@ async def get_foundry_agent(config):
     # Create new agent if needed
     if foundry_agent is None:
         logger.info("Creating new foundry agent")
-        foundry_agent = await FoundryAgent.create(config, credential=credential)
+        foundry_agent = await FoundryAgent.create(config, credential=credential, extras={"BingConnectionId": config["BingConnectionId"]})
         foundry_agent_config_version = config_version
         logger.info(f"Foundry agent created with config version: {config_version}")
     
