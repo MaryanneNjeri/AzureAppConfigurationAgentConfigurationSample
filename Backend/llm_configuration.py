@@ -38,13 +38,23 @@ class LLMConfiguration:
         model: str = "gpt-35-turbo",
         temperature: float = 0.7,
         max_tokens: int = 1000,
+        max_completion_tokens: int = 1000,
         messages: Optional[List[Dict[str, str]]] = None,
+        reasoning_effort: str = "medium",
+        verbosity: str = "medium",
+        top_p: int = 0,
+        stream: bool = False
     ):
         self.model_provider = model_provider
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.top_p = top_p
+        self.stream = stream
         self.messages = []
+        self.max_completion_tokens = max_completion_tokens
+        self.reasoning_effort = reasoning_effort
+        self.verbosity = verbosity
 
         # Initialize messages if provided in the configuration
         if messages is not None:

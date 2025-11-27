@@ -50,7 +50,7 @@ configurations = load(
     refresh_interval=10,
     on_refresh_success=on_refresh_success,
     keyvault_credential=credential,
-    refresh_on=[WatchKey("AZURE_OPENAI"), WatchKey("CHAT_LLM"), WatchKey("MyAgent"), WatchKey(".appconfig.featureflag/Beta")],
+    refresh_on=[WatchKey("AZURE_OPENAI"), WatchKey("ChatLLM"), WatchKey("MyAgent"), WatchKey(".appconfig.featureflag/Beta")],
 )
     
 app.config.update(configurations)
@@ -148,7 +148,9 @@ def chat():
 @app.route("/api/chat/model", methods=["GET"])
 def get_model_name():
     """Endpoint to get the model name."""
-    return jsonify({"model": llm_configuration.model}), 200
+    configurations.refresh()
+
+    return jsonify({"model": app.config["ChatLLM"]["model"]}), 200
 
 @app.route("/api/featureFlag/status", methods=["GET"])
 def get_feature_status():
